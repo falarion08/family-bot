@@ -1,7 +1,6 @@
 
 
 import re 
-# Prolog
 FILE_PATH = '../constants'
 
 def create_fact(names:tuple[str], relationship:str):
@@ -12,18 +11,17 @@ def create_fact(names:tuple[str], relationship:str):
 
         add_fact(fact)
     else:
-        query = r'child|parent'
-        query_result = re.search(query,relationship)
+        # query = r'child|parent'
+        # query_result = re.search(query,relationship)
         
-        base_relationship_name = query_result.group()
+        # base_relationship_name = query_result.group()
         family_members = list(names) 
         owner = family_members.pop()
         
         fact = ''
         
-        for member in family_members:
-            fact = fact + f'{base_relationship_name}({member},{owner}).' + '\n'
-        
+        for member in names:
+            fact = fact + f'{relationship}({member},{owner}).' + '\n'
         
         add_fact(fact)    
         
@@ -45,7 +43,7 @@ family_titles = ['sibling','sister','mother','grandmother','child','uncle','brot
 
 
 
-def examine_prompt(prompt:str):
+def examine_prompt(prompt:str, family_pool:set):
     for filter in valid_sentence_prompts: 
         query_result = re.match(filter,prompt,re.IGNORECASE)
         
