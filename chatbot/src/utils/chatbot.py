@@ -2,8 +2,8 @@ import sys
 sys.path.append('..')
 from pyswip import Prolog
 from utils.regex import get_prompt_type,extract_relationship,extract_names_from_prompt
-from utils.prolog import create_fact,fact_exist
-from constants.relationships import validation_family_title_queries
+from utils.prolog import create_fact,fact_exist,add_fact
+
 
 def examine_prompt(prompt:str, family_pool:set): 
     
@@ -24,7 +24,8 @@ def examine_prompt(prompt:str, family_pool:set):
                     print('I already knew that!')
                 elif validate_kb_insertion(names,relationship,family_pool):
                     
-                    create_fact(names,relationship)
+                    facts = create_fact(names,relationship)
+                    add_fact(facts)
                     update_family_pool(names,family_pool)
                     
                     print('OK! I learned something new.')
@@ -43,12 +44,31 @@ def validate_kb_insertion(names:tuple, relationship: str, family_pool:set)->bool
     count = count_pool_members(names,family_pool)
     distinct_names_count = len(set(names))
     
+
+    notable_titles = {'sister','brother','grandmother','grandfather','mother','father'}
+    family_title_to_gender_neutral = {'mother':'parent','father':'parent','sister':'sibling','brother':'sibling',
+                                      'grandfather':'grandparent','grandmother':'grandparent'}
+    
+
+    
     if distinct_names_count == len(names):
+        prefix = ''
+        suffix = ''
+        
+        if count == 2:
+            prefix = 'is_'
+            suffix = f'_title_assignable({names[0],names[1]}).'
+            
+            if relationship in notable_titles:
+                relationship = family_title_to_gender_neutral[relationship]
+        
+        query = prefix + relationship + suffix
+        
         if count >= 2:
-            prolog_queries = validation_family_title_queries[relationship]
-            for query in prolog_queries: 
-                if fact_exist(query):
-                    return True
+
+            if count == 2 and fact_exist(query):
+                return True
+                
         else:
             return True
     
@@ -57,6 +77,8 @@ def validate_kb_insertion(names:tuple, relationship: str, family_pool:set)->bool
 def fact_duplicated(names:tuple, relationship:str)->bool:
     
     prolog_queries = create_fact(names,relationship)
+    
+    print(prolog_queries)
     
     for query in prolog_queries: 
         
