@@ -52,5 +52,3 @@ is_uncle_title_assignable(PIBLING, X) :-
     ( child(X, _) ; is_parent_of(_, X) ),
     ( brother(PIBLING, _) ; \+ aunt(PIBLING,X) ).
 
-father(one,two).
-father(two,three).

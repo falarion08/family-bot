@@ -36,8 +36,8 @@ son(_,_) :- fail.
 :- discontiguous aunt/2.
 
 
-are_siblings(X,Y) :- sibling(X,Y);sibling(Y,X);parent(_,Y), parent(_,X); child(X,_),child(Y,_);brother(X,Y);brother(Y,X);sister(X,Y);sister(Y,X).
-is_sibling_title_assignable(SIBLING_TO_ASSIGN,X) :- are_siblings(X,X), \+ ( sister(SIBLING_TO_ASSIGN, X) ; brother(SIBLING_TO_ASSIGN, X) ).
+is_sibling(X,Y) :- sibling(X,Y);sibling(Y,X);parent(_,Y), parent(_,X); child(X,_),child(Y,_);brother(X,Y);brother(Y,X);sister(X,Y);sister(Y,X).
+is_sibling_title_assignable(SIBLING_TO_ASSIGN,X) :- is_sibling(X,X), \+ ( sister(SIBLING_TO_ASSIGN, X) ; brother(SIBLING_TO_ASSIGN, X) ).
 
 is_parent_of(PARENT,CHILD) :- child(CHILD,PARENT); parent(PARENT,CHILD);father(PARENT,CHILD);mother(PARENT,CHILD).
 is_parent_title_assignable(PARENT,CHILD) :- is_parent_of(PARENT,CHILD),\+ ( mother(PARENT, CHILD) ; father(PARENT, CHILD) ).
@@ -45,16 +45,22 @@ is_parent_title_assignable(PARENT,CHILD) :- is_parent_of(PARENT,CHILD),\+ ( moth
 is_grandparent_of(GRANDPARENT,X) :- child(_,GRANDPARENT), parent(_,X);child(_,GRANDPARENT), parent(X,_);parent(GRANDPARENT,_), parent(_,X);parent(GRANDPARENT,_), parent(X,_).
 is_grandparent_title_assignable(GRANDPARENT,X) :- is_grandparent_of(GRANDPARENT,X), \+ ( grandmother(GRANDPARENT, X) ; father(GRANDPARENT, X) ).
 
-is_child_of(CHILD,PARENT) :- child(CHILD,PARENT);is_parent_of(PARENT,CHILD);son(CHILD,PARENT);daughter(CHILD,PARENT).
+is_child_of(CHILD,PARENT) :- child(CHILD,PARENT);
+     daughter(CHILD,PARENT);son(CHILD,PARENT);
+     child(_,PARENT),(
+          sibling(CHILD,_);sibling(_,CHILD);sister(CHILD,_);sister(_,CHILD);brother(CHILD,_);brother(_,CHILD));
+     parent(PARENT,_),(
+          sibling(CHILD,_);sibling(_,CHILD);sister(CHILD,_);sister(_,CHILD);brother(CHILD,_);brother(_,CHILD)).
+
 is_child_title_assignable(CHILD,PARENT) :- is_child_of(CHILD,PARENT), \+ (daughter(CHILD,PARENT);son(CHILD,PARENT)).
 
 is_aunt_title_assignable(PIBLING, X) :-
-    are_siblings(PIBLING, _),
+    is_sibling(PIBLING, _),
     ( child(X, _) ; is_parent_of(_, X) ),
     ( sister(PIBLING, _) ; \+ uncle(PIBLING,X) ).
 
 is_uncle_title_assignable(PIBLING, X) :-
-    are_siblings(PIBLING, _),
+    is_sibling(PIBLING, _),
     ( child(X, _) ; is_parent_of(_, X) ),
     ( brother(PIBLING, _) ; \+ aunt(PIBLING,X) ).
 

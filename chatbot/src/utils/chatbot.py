@@ -31,7 +31,8 @@ def examine_prompt(prompt:str, family_pool:set):
                     print('OK! I learned something new.')
                 else:
                     print("That's impossible")
-                
+        else:
+             pass        
     else:
         print('Invalid prompt. Kindly check spelling, and proper casing of the letters.')
 
@@ -77,9 +78,7 @@ def validate_kb_insertion(names:tuple, relationship: str, family_pool:set)->bool
 def fact_duplicated(names:tuple, relationship:str)->bool:
     
     prolog_queries = create_fact(names,relationship)
-    
-    print(prolog_queries)
-    
+        
     for query in prolog_queries: 
         
         query = query.removesuffix('.')

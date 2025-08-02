@@ -2,15 +2,9 @@ from pyswip import Prolog
 from utils.prolog import initialize_knowledge_base
 from utils.chatbot import examine_prompt
 
-
-
 def main():
     people_pool = set()
-    initialize_knowledge_base()
-    initialize_knowledge_base()
-
-    
-
+    initialize_knowledge_base()    
     print('Welcome to FamBot.')
     
     while (True):
