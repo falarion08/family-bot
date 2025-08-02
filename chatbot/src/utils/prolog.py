@@ -56,12 +56,12 @@ is_child_title_assignable(CHILD,PARENT) :- is_child_of(CHILD,PARENT), \+ (daught
 
 is_aunt_title_assignable(PIBLING, X) :-
     is_sibling(PIBLING, _),
-    ( child(X, _) ; is_parent_of(_, X) ),
+    ( is_child_of(X, _) ; is_parent_of(_, X) ),
     ( sister(PIBLING, _) ; \+ uncle(PIBLING,X) ).
 
 is_uncle_title_assignable(PIBLING, X) :-
     is_sibling(PIBLING, _),
-    ( child(X, _) ; is_parent_of(_, X) ),
+    ( is_child_of(X, _) ; is_parent_of(_, X) ),
     ( brother(PIBLING, _) ; \+ aunt(PIBLING,X) ).
 
 """)
