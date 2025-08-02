@@ -46,7 +46,7 @@ def validate_kb_insertion(names:tuple, relationship: str, family_pool:set)->bool
     distinct_names_count = len(set(names))
     
 
-    notable_titles = {'sister','brother','grandmother','grandfather','mother','father'}
+    notable_titles = {'sister','brother','grandmother','grandfather','mother','father',}
     family_title_to_gender_neutral = {'mother':'parent','father':'parent','sister':'sibling','brother':'sibling',
                                       'grandfather':'grandparent','grandmother':'grandparent'}
     
@@ -58,18 +58,37 @@ def validate_kb_insertion(names:tuple, relationship: str, family_pool:set)->bool
         
         if count == 2:
             prefix = 'is_'
-            suffix = f'_title_assignable({names[0],names[1]}).'
+            suffix = f'_title_assignable({names[0]},{names[1]}).'
             
             if relationship in notable_titles:
                 relationship = family_title_to_gender_neutral[relationship]
-        
         query = prefix + relationship + suffix
+        
         
         if count >= 2:
 
-            if count == 2 and fact_exist(query):
-                return True
+            if count == 2:
+                if fact_exist(query):
+                    return True
+            
+            else:
+                # Handles if there are at least 3 names in the statement query
+                names_list = list(names)
+                name_to_check_relationship_with = names_list.pop()
                 
+                for name_to_verify in names_list:
+                    
+                    query = f'is_{relationship}_of({name_to_verify},{name_to_check_relationship_with})'
+                    
+                    if name_to_verify in family_pool and name_to_check_relationship_with in family_pool:
+                        
+                        # Checks remaining individuals if a possible relationship is valid with the person they are being assigned a relationship with if both of them exist
+                        
+                        is_relationship_impossible = not fact_exist(query)
+                        
+                        if is_relationship_impossible:
+                            return False
+                return True
         else:
             return True
     
