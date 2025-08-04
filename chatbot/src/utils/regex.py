@@ -10,9 +10,13 @@ def get_prompt_type(prompt:str)->dict|None:
 
         if query_result:
             result = query_result
+            query_type = 'statement'
+            
+            if filter.endswith('?'):
+                query_type = 'question'
             
             return {
-                'query_type':'statement',
+                'query_type':query_type,
                 'regex_match' : result
                 }
         

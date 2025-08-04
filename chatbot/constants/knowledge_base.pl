@@ -35,88 +35,131 @@ son(_,_) :- fail.
 is_sibling_of(X,Y) :- 
      sibling(X,Y);
      sibling(Y,X);
-     parent(_,Y), parent(_,X);
-     mother(_,Y), mother(_,X); 
-     father(_,Y), father(_,X);  
-     child(X,_),child(Y,_);
+
+     parent(P,Y), parent(P,X);
+     mother(P,Y), mother(P,X); 
+     father(P,Y), father(P,X);
+     
+     parent(P,Y), child(X,P);
+     mother(M,Y), daughter(X,M); 
+     father(F,Y), son(F,X);
+
+     ( child(X,PLACEHOLDER);son(X,PLACEHOLDER);daughter(X,PLACEHOLDER) ) , ( child(Y,PLACEHOLDER);son(Y,PLACEHOLDER);daughter(Y,PLACEHOLDER);parent(PLACEHOLDER,Y);mother(PLACEHOLDER,Y);father(PLACEHOLDER,Y) );
+     ( parent(PLACEHOLDER,X);mother(PLACEHOLDER,X);father(PLACEHOLDER,X)) , ( child(Y,PLACEHOLDER);son(Y,PLACEHOLDER);daughter(Y,PLACEHOLDER);parent(PLACEHOLDER,Y);mother(PLACEHOLDER,Y);father(PLACEHOLDER,Y) );
+
      brother(X,Y);
      brother(Y,X);
      sister(X,Y);
      sister(Y,X).
 
-is_sibling_title_assignable(SIBLING_TO_ASSIGN,X) :- is_sibling_of(SIBLING_TO_ASSIGN,X), \+ ( sister(SIBLING_TO_ASSIGN, X) ; brother(SIBLING_TO_ASSIGN, X) ).
+
+is_sister_title_assignable(SIBLING_TO_ASSIGN,X) :- 
+     is_sibling_of(SIBLING_TO_ASSIGN,X), 
+     \+ ( sister(SIBLING_TO_ASSIGN, X) ; brother(SIBLING_TO_ASSIGN, X) ),
+     \+ (uncle(SIBLING_TO_ASSIGN,Z),is_parent_of(X,Z) );
+     \+ (uncle(SIBLING_TO_ASSIGN,Z),is_child_of(Z,X) ).
+
+is_brother_title_assignable(SIBLING_TO_ASSIGN,X) :- 
+     is_sibling_of(SIBLING_TO_ASSIGN,X), 
+     \+ ( sister(SIBLING_TO_ASSIGN, X) ; brother(SIBLING_TO_ASSIGN, X) ),
+     \+ (aunt(SIBLING_TO_ASSIGN,Z),is_parent_of(X,Z) );
+     \+ (aunt(SIBLING_TO_ASSIGN,Z),is_child_of(Z,X) ).
 
 is_sister_of(X,Y) :- 
      sister(X,Y);
-     sister(X,_), is_sibling_of(_,Y), is_parent_of(_,X),is_parent_of(_,Y).
+     sister(X,Z), is_sibling_of(Z,Y), is_parent_of(Z,X),is_parent_of(Z,Y);
+     aunt(X,Z), ( child(Z,Y);daughter(Z,Y);son(Z,Y) );
+     aunt(X,Z), ( parent(Y,Z);mother(Y,Z);father(Y,Z) ).
+
 
 is_brother_of(X,Y) :-
      brother(X,Y);
-     brother(X,_), is_sibling_of(_,Y), is_parent_of(_,X),is_parent_of(_,Y).
+     brother(X,Z), is_sibling_of(Z,Y), is_parent_of(Z,X),is_parent_of(Z,Y);
+     uncle(X,Z), ( child(Z,Y);daughter(Z,Y);son(Z,Y) );
+     uncle(X,Z), ( parent(Y,Z);mother(Y,Z);father(Y,Z) ).
+
 
 is_parent_of(PARENT,CHILD) :- 
      child(CHILD,PARENT);
      son(CHILD,PARENT);
      daughter(CHILD,PARENT);
-     ( child(_,PARENT);son(_,PARENT);daughter(_,PARENT) ), is_sibling_of(_,CHILD);
+     ( parent(PARENT,X);mother(PARENT,X);father(PARENT,X) ), (sibling(X,CHILD);sibling(CHILD,X);sister(X,CHILD);sister(CHILD,X);brother(X,CHILD);brother(CHILD,X) );
+     ( child(X,PARENT);son(X,PARENT);daughter(X,PARENT) ), (sibling(X,CHILD);sibling(CHILD,X);sister(X,CHILD);sister(CHILD,X);brother(X,CHILD);brother(CHILD,X) );
      parent(PARENT,CHILD);
      father(PARENT,CHILD);
-     mother(PARENT,CHILD);
-     ( parent(PARENT,_),mother(PARENT,_);father(PARENT,_) ), is_sibling_of(_,CHILD).
+     mother(PARENT,CHILD).
 
-is_parent_title_assignable(PARENT,CHILD) :- is_parent_of(PARENT,CHILD),\+ ( mother(PARENT, CHILD) ; father(PARENT, CHILD) ).
+is_mother_of(PARENT,CHILD):-
+     mother(PARENT,CHILD);
+     mother(PARENT, X ), (sibling(CHILD,X);sibling(X,CHILD);sister(CHILD,X);sister(X,CHILD);brother(CHILD,X);brother(X,CHILD)).
+
+is_father_of(PARENT,CHILD):-
+     father(PARENT,CHILD);
+     father(PARENT, X ), (sibling(CHILD,X);sibling(X,CHILD);sister(CHILD,X);sister(X,CHILD);brother(CHILD,X);brother(X,CHILD)).
+
+
+is_parent_title_assignable(PARENT,CHILD) :- 
+     is_parent_of(PARENT,CHILD),
+     \+ ( mother(PARENT, CHILD) ; father(PARENT, CHILD) ).
 
 is_grandparent_of(GRANDPARENT,X) :- 
-     (child(_,GRANDPARENT);son(_,GRANDPARENT);daughter(_,GRANDPARENT)), ( parent(_,X), father(_,X) ; mother(_, X);child(X,_);son(X,_);daughter(X,_) );
-     (parent(GRANDPARENT,_);mother(GRANDPARENT,_);father(GRANDPARENT,_) ), ( parent(_,X), father(_,X) ; mother(_, X);child(X,_);son(X,_);daughter(X,_) ).
+     (child(PLACEHOLDER,GRANDPARENT);son(PLACEHOLDER,GRANDPARENT);daughter(PLACEHOLDER,GRANDPARENT)), ( parent(PLACEHOLDER,X); father(PLACEHOLDER,X) ; mother(PLACEHOLDER, X);child(X,PLACEHOLDER);son(X,PLACEHOLDER);daughter(X,PLACEHOLDER) );
+     (parent(GRANDPARENT,PLACEHOLDER);mother(GRANDPARENT,PLACEHOLDER);father(GRANDPARENT,PLACEHOLDER) ), ( parent(PLACEHOLDER,X); father(PLACEHOLDER,X) ; mother(PLACEHOLDER, X);child(X,PLACEHOLDER);son(X,PLACEHOLDER);daughter(X,PLACEHOLDER) ).
 
-is_grandparent_title_assignable(GRANDPARENT,X) :- is_grandparent_of(GRANDPARENT,X), \+ ( grandmother(GRANDPARENT, X) ; grandfather(GRANDPARENT, X) ).
+is_grandparent_title_assignable(GRANDPARENT,X) :- 
+     is_grandparent_of(GRANDPARENT,X), 
+     \+ ( grandmother(GRANDPARENT, X) ; grandfather(GRANDPARENT, X) ).
 
-is_grandmother_of(GRANDPARENT,X) :- 
-     father(GRANDPARENT,_), ( parent(_,X), father(_,X) ; mother(_, X) );
-     father(GRANDPARENT,_), ( child(X,_);son(X,_);daughter(X,_) ).
+is_grandfather_of(GRANDPARENT,X) :-
+     grandfather(GRANDPARENT,X);
+     father(GRANDPARENT,Z), (parent(Z,X);father(Z,X);mother(Z,X) );
+     father(GRANDPARENT,Z), ( child(X,Z);daughter(X,Z);son(X,Z) ).
 
-is_grandmother_of(GRANDPARENT,X) :- 
-     father(GRANDPARENT,_), is_parent_of(_,X);
-     father(GRANDPARENT,_), is_child_of(X,_).
-
+is_grandmother_of(GRANDPARENT,X) :-
+     grandfather(GRANDPARENT,X);
+     mother(GRANDPARENT,Z), (parent(Z,X);father(Z,X);mother(Z,X) );
+     mother(GRANDPARENT,Z), ( child(X,Z);daughter(X,Z);son(X,Z) ).
 
 is_child_of(CHILD,PARENT) :- 
      child(CHILD,PARENT);
      daughter(CHILD,PARENT);
      son(CHILD,PARENT);
-     child(_,PARENT),(
-          sibling(CHILD,_);sibling(_,CHILD);sister(CHILD,_);sister(_,CHILD);brother(CHILD,_);brother(_,CHILD));
-     parent(PARENT,_),(
-          sibling(CHILD,_);sibling(_,CHILD);sister(CHILD,_);sister(_,CHILD);brother(CHILD,_);brother(_,CHILD)).
+     (child(X,PARENT);son(X,PARENT);daughter(X,PARENT) ),(sibling(CHILD,X);sibling(X,CHILD);sister(CHILD,X);sister(X,CHILD);brother(CHILD,X);brother(X,CHILD));
+     parent(PARENT,CHILD);
+     father(PARENT,CHILD);
+     mother(PARENT,CHILD);
+     ( parent(PARENT,X); mother(PARENT,X); father(PARENT,X) ),(sibling(CHILD,X);sibling(X,CHILD);sister(CHILD,X);sister(X,CHILD);brother(CHILD,X);brother(X,CHILD)).
 
-is_child_title_assignable(CHILD,PARENT) :- is_child_of(CHILD,PARENT), \+ (daughter(CHILD,PARENT);son(CHILD,PARENT)).
+is_child_title_assignable(CHILD,PARENT) :- 
+     is_child_of(CHILD,PARENT),
+     \+ ( daughter(CHILD,PARENT);son(CHILD,PARENT) ).
 
 is_daughter_of(CHILD,PARENT) :- 
-     daughter(CHILD,PARENT),
-     sister(CHILD,_), ( child(_,PARENT);son(_,PARENT);daughter(_,PARENT) );
-     sister(CHILD,_), ( parent(PARENT,_);daughter(PARENT,_);son(PARENT,_) ).
+     daughter(CHILD,PARENT);
+     sister(CHILD,X), ( child(X,PARENT);son(X,PARENT);daughter(X,PARENT) );
+     sister(CHILD,X), ( parent(PARENT,X);daughter(PARENT,X);son(PARENT,X) ).
 
 is_son_of(CHILD,PARENT) :- 
      son(CHILD,PARENT), 
-     brother(CHILD,_), ( child(_,PARENT);son(_,PARENT);daughter(_,PARENT) );
-     brother(CHILD,_), ( parent(PARENT,_);daughter(PARENT,_);son(PARENT,_) ).
+     brother(CHILD,X), ( child(X,PARENT);son(X,PARENT);daughter(X,PARENT) );
+     brother(CHILD,X), ( parent(PARENT,X);daughter(PARENT,X);son(PARENT,X) ).
 
 
 is_aunt_title_assignable(PIBLING, X) :-
-    is_sibling_of(PIBLING, _),
-    ( is_child_of(X, _) ; is_parent_of(_, X) ),
-    ( sister(PIBLING, _) ; \+ uncle(PIBLING,X) ).
+     ( sister(PIBLING,Y); is_sibling_of(PIBLING, Y) ),
+     ( is_child_of(X, Y) ; is_parent_of(Y, X) ),
+     \+ ( aunt(PIBLING,Y) ; uncle(PIBLING,Y ) ). 
 
 is_uncle_title_assignable(PIBLING, X) :-
-     uncle(PIBLING,X);
-     sister(PIBLING,_), is_sibling_of(PIBLING, _),
-     ( is_child_of(X, _) ; is_parent_of(_, X) ).
+     ( brother(PIBLING,Y); is_sibling_of(PIBLING, Y) ),
+     ( is_child_of(X, Y) ; is_parent_of(Y, X) ),
+     \+ ( aunt(PIBLING,X) ; uncle(PIBLING,X ) ). 
 
 is_aunt_of(PIBLING,X) :-
      aunt(PIBLING,X);
-     sister(PIBLING,_), is_sibling_of(PIBLING, _),
-     ( is_child_of(X, _) ; is_parent_of(_, X) ).
-brother(sigma,ph).
-son(viet,ph).
-aunt(sigma,viet).
+     sister(PIBLING, Y), is_child_of(X,Y).
+
+is_uncle_of(PIBLING,X) :-
+     uncle(PIBLING,X);
+     brother(PIBLING,Y), is_sibling_of(PIBLING, Y),
+     ( is_child_of(X, Y) ; is_parent_of(Y, X) ).

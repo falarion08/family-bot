@@ -8,7 +8,8 @@ valid_sentence_prompts = [
     r'(\w+) is the (?:mother|father) of (\w+).',
     r'(\w+) is an (?:uncle|aunt) of (\w+).',
     r'(\w+), (\w+) and (\w+) are children of (\w+).',
-    r'(\w+) and (\w+) are the parents of (\w+).'
+    r'(\w+) and (\w+) are the parents of (\w+).',
+    r'Who are the daughters of (\w+)?'
 ]
 
 relationships = [

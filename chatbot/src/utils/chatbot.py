@@ -2,7 +2,7 @@ import sys
 sys.path.append('..')
 from pyswip import Prolog
 from utils.regex import get_prompt_type,extract_relationship,extract_names_from_prompt
-from utils.prolog import create_fact,fact_exist,add_fact
+from utils.prolog import create_fact,fact_exist,add_fact,query_knowledge_base
 
 
 def examine_prompt(prompt:str, family_pool:set): 
@@ -31,8 +31,27 @@ def examine_prompt(prompt:str, family_pool:set):
                     print('OK! I learned something new.')
                 else:
                     print("That's impossible")
-        else:
-             pass        
+                    
+        elif prompt_type == 'question':
+            relationship = extract_relationship(prompt)
+            name_to_query = extract_names_from_prompt(regex_match)[0].lower()
+            
+            if regex_match:
+                
+                if prompt.startswith("Who"):
+                    query = f'is_daughter_of(X,{name_to_query}).'
+                    result = query_knowledge_base(query)
+                    
+                    data = extract_data_from_prolog_query_result(result)
+                    
+                    sentence_format = {'sibling':'siblings','parent':'parents','mother':'mother','father':'father','sister':'sisters','brother':'brother','son':'sons','daughter':'daughters','child':'children'}
+                
+                    if data: 
+                        print('No information existing for this query yet.')
+                    else:
+                        print(f'The {sentence_format} of {name_to_query}: ' + ','.join(result))
+                else: 
+                    pass
     else:
         print('Invalid prompt. Kindly check spelling, and proper casing of the letters.')
 
@@ -108,7 +127,6 @@ def fact_duplicated(names:tuple, relationship:str)->bool:
             return False
         
     return True
-    
 
 def count_pool_members(names:tuple, family_pool:set)->int: 
     count = 0
@@ -117,8 +135,19 @@ def count_pool_members(names:tuple, family_pool:set)->int:
             count = count + 1
     return count
     
-                
+def extract_data_from_prolog_query_result(query_result:list[dict])->list[str]:
+    
+    results = []
+    
+    if len(query_result) > 0:
+        for item in query_result:
             
+            item = list(item.values())
+            item = item[0]
+            
+            results.append(item)
+            
+    return results
             
     
     
