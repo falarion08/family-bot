@@ -109,12 +109,16 @@ def validate_kb_insertion(names:tuple, relationship: str, family_pool:set)->bool
                 
                 if count == 1: # This handles when only one person exist in the family pool, and check what gender is assigned to them.
                     if relationship in female_roles:
-                        query = f'has_female_title({names[0]}).'
-                        if fact_exist(query):
+                        has_male_title = fact_exist(f'has_male_title({names[0]}).')
+                        has_female_title = fact_exist(f'has_female_title({names[0]}).')
+
+                        if (not has_male_title and has_female_title) or (not has_male_title and not has_female_title):
                             return True
                     elif relationship in male_roles:
-                        query = f'has_male_title({names[0]}).'
-                        if fact_exist(query):
+                        has_male_title = fact_exist(f'has_male_title({names[0]}).')
+                        has_female_title = fact_exist(f'has_female_title({names[0]}).')
+
+                        if (has_male_title and not has_female_title) or (not has_male_title and not has_female_title):
                             return True
                     else:
                         return True

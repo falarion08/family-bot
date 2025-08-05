@@ -243,7 +243,7 @@ is_aunt_of(PIBLING,X) :-
 
 is_uncle_of(PIBLING,X) :-
      uncle(PIBLING,X);
-     is_sister_of(PIBLING,Y),
+     is_brother_of(PIBLING,Y),
      ( is_child_of(X, Y) ; is_parent_of(Y, X) ).
 
 has_male_title(X) :- 
