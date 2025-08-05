@@ -30,6 +30,15 @@ def get_prompt_type(prompt:str)->dict|None:
                 }
         
 def extract_relationship(prompt:str) -> str:
+    """
+    Extract the relationship title from the prompt
+
+    Args:
+        prompt (str): The prompt of the user which is either a statement or a question
+
+    Returns:
+        str: The name of the relationship between two users. 
+    """
     re_filter = r'' + relationships[0]
     
     for title in relationships[1:]:
@@ -40,7 +49,16 @@ def extract_relationship(prompt:str) -> str:
     
     return relationship
 
-def extract_names_from_prompt(result: Match[str]):
+def extract_names_from_prompt(result: Match[str]) -> tuple[str | None]:
+    """
+    Extract all names from a prompt of the user
+
+    Args:
+        result (Match[str]): A regex match which contains the names of the people in the prompt 
+
+    Returns:
+        tuple[str | None]: The names of the individual returned as a tuple. 
+    """
     names = result.groups()
     return names   
 
