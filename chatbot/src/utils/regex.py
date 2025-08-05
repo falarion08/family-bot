@@ -5,16 +5,25 @@ from constants.relationships import valid_sentence_prompts,relationships
 
 
 def get_prompt_type(prompt:str)->dict|None:
+    """_summary_
+
+    Args:
+        prompt (str): _description_
+
+    Returns:
+        dict|None: _description_
+    """
     for filter in valid_sentence_prompts: 
         query_result = re.match(filter,prompt,re.IGNORECASE)
+
 
         if query_result:
             result = query_result
             query_type = 'statement'
-            
-            if filter.endswith('?'):
+                        
+            if prompt.endswith('?'):
                 query_type = 'question'
-            
+                
             return {
                 'query_type':query_type,
                 'regex_match' : result

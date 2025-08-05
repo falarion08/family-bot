@@ -1,98 +1,130 @@
 import sys
 sys.path.append('..')
-from pyswip import Prolog
 from utils.regex import get_prompt_type,extract_relationship,extract_names_from_prompt
 from utils.prolog import create_fact,fact_exist,add_fact,query_knowledge_base
+from constants.relationships import sentence_format,male_roles,female_roles
 
 
-def examine_prompt(prompt:str, family_pool:set): 
+def examine_prompt(prompt:str, family_pool:set) -> None: 
+    """
+    This function handles the prompt of the user and produce the proper output depending on the user prompt.
+
+    Args:
+        prompt (str): The prompt of the user which is either a statement or a question.
+        family_pool (set): A set of people to know who are already exist in the family tree.
+    """
     
     prompt_result  = get_prompt_type(prompt)
     
     if prompt_result:
 
         prompt_type, regex_match = prompt_result['query_type'], prompt_result['regex_match']
-        
+
+        relationship = extract_relationship(prompt)
+        names = extract_names_from_prompt(regex_match)
+
         if prompt_type == 'statement':
 
-            if regex_match:
+            if regex_match:                
                 
-                relationship = extract_relationship(prompt)
-                names = extract_names_from_prompt(regex_match)
-                
+                # Examines if the fact already exist in the knowledge base.
                 if fact_duplicated(names,relationship):
                     print('I already knew that!')
+                
+                # Handles appending to the knowledge base if the relationship is valid
                 elif validate_kb_insertion(names,relationship,family_pool):
                     
                     facts = create_fact(names,relationship)
                     add_fact(facts)
-                    update_family_pool(names,family_pool)
+                    update_family_pool(names,family_pool) # Adds the names of individuals to the knowledge pool.
                     
                     print('OK! I learned something new.')
+                    
                 else:
                     print("That's impossible")
                     
         elif prompt_type == 'question':
-            relationship = extract_relationship(prompt)
+
             name_to_query = extract_names_from_prompt(regex_match)[0].lower()
+            
             
             if regex_match:
                 
                 if prompt.startswith("Who"):
-                    query = f'is_daughter_of(X,{name_to_query}).'
-                    result = query_knowledge_base(query)
+                    
+                    query = f'is_{relationship}_of(X,{name_to_query.lower()}).' 
+                    result = query_knowledge_base(query) 
                     
                     data = extract_data_from_prolog_query_result(result)
-                    
-                    sentence_format = {'sibling':'siblings','parent':'parents','mother':'mother','father':'father','sister':'sisters','brother':'brother','son':'sons','daughter':'daughters','child':'children'}
-                
-                    if data: 
+
+                    if len(data) == 0: 
                         print('No information existing for this query yet.')
                     else:
-                        print(f'The {sentence_format} of {name_to_query}: ' + ','.join(result))
+                        print(f'The {sentence_format[relationship]} of {name_to_query}: ' + ', '.join(data))
+                
                 else: 
-                    pass
+                    relationship_exist = relationship_checker(names,relationship)
+                    
+                    if relationship_exist:
+                        print('yes')
+                    else: 
+                        print('no')
     else:
         print('Invalid prompt. Kindly check spelling, and proper casing of the letters.')
 
-def update_family_pool(names:tuple, family_pool:set):
+def update_family_pool(names:tuple, family_pool:set) -> None:
+    """
+    Add a string of names into the family pool set
+
+    Args:
+        names (tuple): The names of the people to add in the family pool
+        family_pool (set): The set of people already exist in the family tree.
+    """
     for name in names:
         family_pool.add(name)
         
 def validate_kb_insertion(names:tuple, relationship: str, family_pool:set)->bool: 
+    """
+    This function examines whether the prompt is a valid relationship or an an impossible relationship. 
+
+    Args:
+        names (tuple): Names of the people in the query.
+        relationship (str): The relationship to be assigned to the people in the query
+        family_pool (set): A set of people who already exist in the database
+
+    Returns:
+        bool: True if the relationship is valid and add them to the knowledge base, otherwise it should be false. 
+    """
     
     count = count_pool_members(names,family_pool)
     distinct_names_count = len(set(names))
-    
 
-    notable_titles = {'sister','brother','grandmother','grandfather','mother','father',}
-    family_title_to_gender_neutral = {'mother':'parent','father':'parent','sister':'sibling','brother':'sibling',
-                                      'grandfather':'grandparent','grandmother':'grandparent'}
-    
+    # Handler if there are no duplicates of name in the query.
+    if distinct_names_count == len(names): 
 
-    
-    if distinct_names_count == len(names):
-        prefix = ''
-        suffix = ''
-        
-        if count == 2:
-            prefix = 'is_'
-            suffix = f'_title_assignable({names[0]},{names[1]}).'
+        if count >= 1:
+            query = f'is_{relationship}_title_assignable({names[0]},{names[1]}).'
             
-            if relationship in notable_titles:
-                relationship = family_title_to_gender_neutral[relationship]
-        query = prefix + relationship + suffix
-        
-        
-        if count >= 2:
-
-            if count == 2:
-                if fact_exist(query):
-                    return True
+            if count <= 2:
+                
+                if count == 1: # This handles when only one person exist in the family pool, and check what gender is assigned to them.
+                    if relationship in female_roles:
+                        query = f'has_female_title({names[0]}).'
+                        if fact_exist(query):
+                            return True
+                    elif relationship in male_roles:
+                        query = f'has_male_title({names[0]}).'
+                        if fact_exist(query):
+                            return True
+                    else:
+                        return True
+                else:    
+                    if fact_exist(query):
+                        return True
             
             else:
                 # Handles if there are at least 3 names in the statement query
-                names_list = list(names)
+                names_list:list[str] = list(names)
                 name_to_check_relationship_with = names_list.pop()
                 
                 for name_to_verify in names_list:
@@ -107,6 +139,18 @@ def validate_kb_insertion(names:tuple, relationship: str, family_pool:set)->bool
                         
                         if is_relationship_impossible:
                             return False
+
+                # Special test verification to check if all 3 children of the parent are siblings
+                if relationship == 'child':
+                    
+                    for i,person in enumerate(names_list):
+                        for person_to_verify in names_list[i:]:
+                            
+                            if person in family_pool and person_to_verify in family_pool:
+                                query = f'is_sibling_of({person.lower()},{person_to_verify.lower()})'
+                                
+                                if not fact_exist(query):
+                                    return False
                 return True
         else:
             return True
@@ -114,6 +158,17 @@ def validate_kb_insertion(names:tuple, relationship: str, family_pool:set)->bool
     return False
 
 def fact_duplicated(names:tuple, relationship:str)->bool:
+    
+    """ 
+     This function examines whether the exact relationship between the provided names already exist in the knowledge base.
+   
+    Args:
+        names (tuple): Names of the people in the query.
+        relationship (str): The relationship to be assigned to the people in the query
+
+    Returns:
+        bool: True if the information exist, otherwise it is False.
+    """
     
     prolog_queries = create_fact(names,relationship)
         
@@ -129,6 +184,16 @@ def fact_duplicated(names:tuple, relationship:str)->bool:
     return True
 
 def count_pool_members(names:tuple, family_pool:set)->int: 
+    """
+    Count the number of names from the prompt that are already in the family pool set. 
+
+    Args:
+        names (tuple): Names of the people in the query.
+        family_pool (set): A set of people who already exist in the database
+
+    Returns:
+        int: Number of people who already exist in the family pool.
+    """
     count = 0
     for name in names:
         if name in family_pool:
@@ -136,6 +201,15 @@ def count_pool_members(names:tuple, family_pool:set)->int:
     return count
     
 def extract_data_from_prolog_query_result(query_result:list[dict])->list[str]:
+    """
+    Returns a list of string that contains the name of people that was obtained from the prolog query.
+
+    Args:
+        query_result (list[dict]): The data directly obtained from running a query using Pyswip
+
+    Returns:
+        list[str]: The list of individuals from the query
+    """
     
     results = []
     
@@ -148,7 +222,32 @@ def extract_data_from_prolog_query_result(query_result:list[dict])->list[str]:
             results.append(item)
             
     return results
-            
+
+def relationship_checker(names:tuple,relationship:tuple) -> bool:
+    """
+    Examines the relationship between the names provided. It checks wheter the person is a sister of another person,
+    and other relationships. 
+
+    Args:
+        names (tuple): Names of the people in the query.
+        relationship (str): The relationship to be assigned to the people in the query
+
+    Returns:
+        bool: True if a relationship exist between the names provided, otherwise it should be false. 
+    """
+    name_list = list(names) 
+    
+    name_to_check_with = name_list.pop()
+    
+    for name in name_list:
+        query = f'is_{relationship}_of({name},{name_to_check_with}).'
+        
+        if not fact_exist(query):
+            return False
+    
+    return True 
+    
+        
     
     
     
