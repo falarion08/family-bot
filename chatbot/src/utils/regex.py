@@ -5,13 +5,14 @@ from constants.relationships import valid_sentence_prompts,relationships
 
 
 def get_prompt_type(prompt:str)->dict|None:
-    """_summary_
+    """
+    Get the type of prompt user 
 
     Args:
         prompt (str): _description_
 
     Returns:
-        dict|None: _description_
+        dict|None: Returns the type of prompt of the user and the match regex filter
     """
     for filter in valid_sentence_prompts: 
         query_result = re.match(filter,prompt,re.IGNORECASE)
